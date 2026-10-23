@@ -355,6 +355,10 @@ function swipeQuestion(title, image, text) {
                             <span className="yes">Да →</span>
                         </div>
                     </div>
+                    <div className="swipeActions">
+                        <button type="button" onClick={() => next(2)}>Нет</button>
+                        <button type="button" onClick={() => next(1)}>Да</button>
+                    </div>
                 </div>
             );
         }

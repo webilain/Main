@@ -504,6 +504,27 @@ nav a,
     color:#999;
 }
 
+.swipeActions{
+    display:flex;
+    gap:12px;
+    width:min(350px, 100%);
+    margin:16px auto 0;
+}
+
+.swipeActions button{
+    flex:1;
+    min-height:44px;
+    border:1px solid #ddd;
+    border-radius:10px;
+    background:#fff;
+    cursor:pointer;
+    font:inherit;
+}
+
+.swipeActions button:hover{
+    background:#f5f5f5;
+}
+
 /* ===== COMPARE ===== */
 .compareBlock{
     display:grid;
