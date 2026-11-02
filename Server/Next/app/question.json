@@ -148,12 +148,5 @@
         "type": "rate",
         "question": "Насколько тебе важно постоянно развиваться и осваивать новые навыки?",
         "chance": 1.0
-    },
-    {
-        "type": "chance",
-        "question": "7 or 6",
-        "left": { "text": "7", "image": "Sech_sieben.png"},
-        "right": { "text": "6", "image": "Sech_sieben.png"},
-        "chance": 0.05
     }
 ]

@@ -751,6 +751,21 @@ nav a,
 
 .recommendation{
     margin-top:35px;
+    font-size:16px;
+    font-weight:400;
     line-height:1.7;
     text-align:left;
+}
+
+.recommendation p + p{
+    margin-top:16px;
+}
+
+.recommendation p,
+.recommendation span{
+    font-weight:inherit;
+}
+
+.recommendation strong{
+    font-weight:700;
 }

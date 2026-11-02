@@ -23,8 +23,6 @@ function transformQuestions(serverQuestions) {
                 return swipeQuestion(q.question, q.image, q.text);
             case "compare":
                 return compareQuestion(q.question, q.left, q.right);
-            case "chance":
-                return chanceQuestion(q.question, q.images);
             case "rate":
                 return rateQuestion(q.question, isLast);
             default:
@@ -219,7 +217,7 @@ export default function TestPage() {
                                 </div>
                             ))}
                         </div>
-                        <p className="recommendation">{getRecommendation(results)}</p>
+                        <div className="recommendation">{getRecommendation(results)}</div>
                     </div>
                 </main>
             </>
@@ -476,22 +474,20 @@ function hasCharacteristics(result) {
 }
 
 function careerRecommendation({ profession, direction, reason, tasks, environment, growth, advice, ranking }) {
+    const qualities = (items) => items.map((item, index) => (
+        <span key={item.key}>
+            {index > 0 ? ", " : ""}<strong>{item.label.toLowerCase()}</strong> ({item.value}/10)
+        </span>
+    ));
+
     return (
-        <div className="recommendationContent">
-            <h2>Рекомендуемое направление: <strong>{profession}</strong></h2>
-            <p><strong>Ваш профиль:</strong> {reason}</p>
-            <p><strong>Ведущие качества:</strong> {ranking.leading.map((item) => `${item.label} (${item.value}/10)`).join(", ")}.</p>
-            <p><strong>Поддерживающие качества:</strong> {ranking.supporting.map((item) => `${item.label} (${item.value}/10)`).join(", ")} помогают уверенно развиваться в направлении «{direction}».</p>
-            <p><strong>Зоны роста:</strong> {ranking.growth.map((item) => `${item.label} (${item.value}/10)`).join(", ")}. Более низкие значения не являются запретом, но их стоит постепенно усиливать практикой.</p>
-            <p>В работе вам будет важно видеть <em>понятную цель</em> и понимать, какой результат должен получиться в конце.</p>
-            <p>Наиболее подходящие задачи: <strong>{tasks}</strong>.</p>
-            <p>Комфортнее всего вы будете чувствовать себя в среде, где {environment}.</p>
-            <p>Вашим главным преимуществом станет способность превращать сильные стороны в устойчивый рабочий навык.</p>
-            <p>Со временем вы сможете перейти от первых учебных задач к самостоятельным проектам и более высокой ответственности.</p>
-            <p><mark>Практический следующий шаг:</mark> {advice}</p>
-            <p>Эта рекомендация отражает текущий баланс качеств, поэтому после нового опыта ваш профессиональный маршрут может измениться.</p>
-            <p><strong>Перспектива:</strong> {growth}</p>
-        </div>
+        <>
+            <p>Вам может подойти профессия <strong>{profession.toLowerCase()}</strong> в направлении «{direction}»: {reason}</p>
+            <p>Ваши ведущие качества — {qualities(ranking.leading)}. Дополнительно вас поддерживают {qualities(ranking.supporting)}. Зоны роста — {qualities(ranking.growth)}. Их можно постепенно развивать на практике.</p>
+            <p>В этой профессии вы будете заниматься такими задачами: {tasks}. Вам подойдёт среда, где {environment}.</p>
+            <p>Чтобы попробовать себя в этом направлении, {advice}. В дальнейшем возможны такие роли: {growth}.</p>
+            <p>Результат отражает ваши текущие качества. С новым опытом интересы и подходящее направление могут измениться.</p>
+        </>
     );
 }
 
@@ -608,24 +604,4 @@ function getRecommendation(result) {
         growth: "графический дизайнер, арт-директор или специалист по визуальному брендингу",
         ranking
     });
-}
-
-function chanceQuestion(title, image) {
-    return {
-        render({ next }) {
-            return (
-                <div className="questionContainer">
-                    <h2>{title}</h2>
-                    <img
-                        alt={title}
-                        src={imagePath(image)}
-                    />
-                    <div className="compareBlock">
-                        <button className="compareCard" onClick={() => next(6)}>6</button>
-                        <button className="compareCard" onClick={() => next(7)}>7</button>
-                    </div>
-                </div>
-            );
-        }
-    };
 }
