@@ -7,7 +7,8 @@ export const runtime = "nodejs";
 const answerSchema = new mongoose.Schema({
     id: { type: String, required: true, unique: true },
     unique_user_id: { type: String, required: true },
-    name: { type: String, default: "" },
+    name: { type: String, required: true, trim: true, maxlength: 120 },
+    school: { type: String, required: true, trim: true, maxlength: 200 },
     timestamp: { type: Date, required: true },
     answers: { type: [mongoose.Schema.Types.Mixed], required: true }
 }, { collection: "answers" });
@@ -68,6 +69,14 @@ export async function POST(request) {
         return NextResponse.json({ error: "id, unique_user_id, and answers are required" }, { status: 400 });
     }
 
+    if (typeof payload.name !== "string" || !payload.name.trim() || payload.name.trim().length > 120) {
+        return NextResponse.json({ error: "Введите имя и фамилию (до 120 символов)." }, { status: 400 });
+    }
+
+    if (typeof payload.school !== "string" || !payload.school.trim() || payload.school.trim().length > 200) {
+        return NextResponse.json({ error: "Выберите школу или введите её название (до 200 символов)." }, { status: 400 });
+    }
+
     const timestamp = payload.timestamp ? new Date(payload.timestamp) : new Date();
     if (Number.isNaN(timestamp.getTime())) {
         return NextResponse.json({ error: "timestamp must be a valid date" }, { status: 400 });
@@ -78,7 +87,8 @@ export async function POST(request) {
         const answer = await Answer.create({
             id: payload.id.trim(),
             unique_user_id: payload.unique_user_id.trim(),
-            name: typeof payload.name === "string" ? payload.name.trim() : "",
+            name: payload.name.trim(),
+            school: payload.school.trim(),
             timestamp,
             answers: payload.answers
         });

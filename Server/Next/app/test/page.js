@@ -2,6 +2,7 @@
 
 import { useState, useCallback, useEffect, useRef } from "react";
 import { fetchQuestions, sendAnswers } from "./app";
+import { semeySchools } from "./schools";
 
 let data = [];
 
@@ -42,7 +43,12 @@ export default function TestPage() {
     const [loading, setLoading] = useState(true);
     const [finishStep, setFinishStep] = useState("name");
     const [userName, setUserName] = useState("");
+    const [selectedSchool, setSelectedSchool] = useState("");
+    const [otherSchool, setOtherSchool] = useState("");
+    const [saveError, setSaveError] = useState("");
+    const saving = useRef(false);
     const [results, setResults] = useState(null);
+    const schoolName = selectedSchool === "other" ? otherSchool.trim() : selectedSchool;
 
     // Загружаем вопросы из локального JSON при загрузке компонента
     useEffect(() => {
@@ -130,12 +136,17 @@ export default function TestPage() {
         );
     }
 
-    async function startCalculation(name = "") {
+    async function startCalculation() {
+        const name = userName.trim();
+        if (!name || !schoolName || saving.current) return;
+
+        saving.current = true;
         setUserName(name);
+        setSaveError("");
         setFinishStep("loading");
 
         try {
-            const saved = await sendAnswers(data, name);
+            const saved = await sendAnswers(data, name, schoolName);
 
             setResults(saved?.result || {});
             data = [];
@@ -143,7 +154,9 @@ export default function TestPage() {
         } catch (error) {
             console.error("Не удалось сохранить ответы:", error);
             setFinishStep("name");
-            window.alert("Не удалось сохранить ответы в базу данных. Проверьте подключение MongoDB и попробуйте ещё раз.");
+            setSaveError("Не удалось сохранить ответы. Проверьте соединение с интернетом и попробуйте ещё раз — ваши ответы сохранены в этой вкладке.");
+        } finally {
+            saving.current = false;
         }
     }
 
@@ -155,25 +168,60 @@ export default function TestPage() {
                     <main className="testPage finish">
                         <div className="finishBox nameBox">
                             <h1>Тест завершён</h1>
-                            <p>Введите имя, чтобы увидеть персональный результат.</p>
-                            <input
-                                className="nameInput"
-                                value={userName}
-                                onChange={(event) => setUserName(event.target.value)}
-                                placeholder="Имя и фамилия"
-                            />
-                            <div className="finishActions">
-                                <button className="skipBtn" onClick={() => startCalculation()}>
-                                    Пропустить
-                                </button>
-                                <button
-                                    className="finishBtn"
-                                    onClick={() => startCalculation(userName.trim())}
-                                    disabled={!userName.trim()}
+                            <p>Укажите имя и школу, чтобы увидеть персональный результат.</p>
+                            <form className="participantForm" onSubmit={(event) => {
+                                event.preventDefault();
+                                startCalculation();
+                            }}>
+                                <label htmlFor="participantName">Имя и фамилия</label>
+                                <input
+                                    id="participantName"
+                                    name="name"
+                                    className="participantInput"
+                                    value={userName}
+                                    onChange={(event) => setUserName(event.target.value)}
+                                    placeholder="Введите имя и фамилию"
+                                    autoComplete="name"
+                                    required
+                                    maxLength={120}
+                                    pattern={".*\\S.*"}
+                                />
+                                <label htmlFor="participantSchool">Школа</label>
+                                <select
+                                    id="participantSchool"
+                                    name="school"
+                                    className="participantInput"
+                                    value={selectedSchool}
+                                    onChange={(event) => setSelectedSchool(event.target.value)}
+                                    required
                                 >
+                                    <option value="" disabled>Выберите школу Семея</option>
+                                    {semeySchools.map((school) => (
+                                        <option key={school} value={school}>{school}</option>
+                                    ))}
+                                    <option value="other">Другое</option>
+                                </select>
+                                {selectedSchool === "other" && (
+                                    <>
+                                        <label htmlFor="otherSchool">Название школы</label>
+                                        <input
+                                            id="otherSchool"
+                                            name="otherSchool"
+                                            className="participantInput"
+                                            value={otherSchool}
+                                            onChange={(event) => setOtherSchool(event.target.value)}
+                                            placeholder="Введите название школы"
+                                            required
+                                            maxLength={200}
+                                            pattern={".*\\S.*"}
+                                        />
+                                    </>
+                                )}
+                                {saveError && <p className="saveError" role="alert">{saveError}</p>}
+                                <button className="finishBtn" type="submit" disabled={!userName.trim() || !schoolName}>
                                     Продолжить
                                 </button>
-                            </div>
+                            </form>
                         </div>
                     </main>
                 </>

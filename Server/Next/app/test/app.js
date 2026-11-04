@@ -54,7 +54,7 @@ async function fetchQuestions() {
     return questions.filter((question) => Math.random() <= (question.chance ?? 1));
 }
 
-async function sendAnswers(data, name = "") {
+async function sendAnswers(data, name, school) {
     const id = generateId();
     const unique_user_id = getUniqueUserId();
 
@@ -62,7 +62,8 @@ async function sendAnswers(data, name = "") {
         id: id,
         unique_user_id: unique_user_id,
         timestamp: new Date().toISOString(),
-        name: name,
+        name: name.trim(),
+        school: school.trim(),
         answers: data
     };
 
