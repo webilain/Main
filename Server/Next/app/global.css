@@ -66,6 +66,47 @@ nav a:hover::after{
     border-radius:10px;
 }
 
+.languageSwitch{
+    display:flex;
+    align-items:center;
+    gap:3px;
+    flex-shrink:0;
+    padding:3px;
+    border:1px solid #ddd;
+    border-radius:10px;
+    color:#111;
+}
+
+.languageSwitch svg{
+    margin:0 3px;
+}
+
+.languageSwitch button{
+    min-width:36px;
+    min-height:30px;
+    padding:3px;
+    border:0;
+    border-radius:6px;
+    background:transparent;
+    color:inherit;
+    font-size:12px;
+    cursor:pointer;
+}
+
+.languageSwitch button:hover{
+    background:#eee;
+}
+
+.languageSwitch button[aria-pressed="true"]{
+    background:#111;
+    color:white;
+}
+
+.languageSwitch button:focus-visible{
+    outline:2px solid #8e2de2;
+    outline-offset:2px;
+}
+
 main{
     margin-top:80px;
 }
@@ -94,7 +135,9 @@ main{
     line-height:1.7;
 }
 
-.heroText button{
+.heroBtn{
+    display:inline-block;
+    text-decoration:none;
     padding:15px 40px;
     border:none;
     border-radius:12px;
@@ -223,7 +266,7 @@ footer{
 }
 
 /* ===== COMBINED TRANSITIONS ===== */
-.heroText button,
+.heroBtn,
 .sliderButtons button,
 .headerBtn,
 nav a,
@@ -243,7 +286,7 @@ nav a,
 }
 
 /* ===== HOVER EFFECTS ===== */
-.heroText button:hover,
+.heroBtn:hover,
 .headerBtn:hover{
     transform:translateY(-3px);
     box-shadow:0 10px 25px rgba(0,0,0,0.15);
@@ -285,7 +328,7 @@ nav a,
 }
 
 /* ===== ACTIVE EFFECTS (unified) ===== */
-.heroText button:active,
+.heroBtn:active,
 .headerBtn:active,
 .sliderButtons button:active,
 .compareCard:active,
@@ -697,6 +740,20 @@ nav a,
     color:#b42318;
     font-weight:400;
     line-height:1.5;
+}
+
+.participantForm .schoolDetails{
+    font-size:14px;
+    color:#555;
+    line-height:1.4;
+}
+
+.participantForm .schoolDetails:empty{
+    display:none;
+}
+
+.schoolDetails span{
+    display:block;
 }
 
 .finishActions{

@@ -1,8 +1,6 @@
 import "./global.css";
 import "./media.css";
-import Link from "next/link";
-
-const logo = "/images/logo.png";
+import { LanguageProvider, SiteHeader } from "./language";
 
 export default function RootLayout({ children }) {
   return (
@@ -13,19 +11,10 @@ export default function RootLayout({ children }) {
 
       <body>
 
-        <header>
-          <img src={logo} alt="logo" />
-
-          <nav>
-            <a href="#prof">Профориентирование</a>
-            <a href="#about">О нас</a>
-            <Link href="/test" className="headerBtn">
-              Начать сейчас!
-            </Link>
-          </nav>
-        </header>
-
-        {children}
+        <LanguageProvider>
+          <SiteHeader />
+          {children}
+        </LanguageProvider>
 
       </body>
     </html>

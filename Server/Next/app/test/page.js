@@ -1,10 +1,11 @@
 "use client";
 
-import { useState, useCallback, useEffect, useRef } from "react";
+import { useState, useCallback, useEffect, useMemo, useRef } from "react";
 import { fetchQuestions, sendAnswers } from "./app";
-import { semeySchools } from "./schools";
-
-let data = [];
+import { useLanguage } from "../language";
+import { testText, translateQuestion } from "./translations";
+import { schools, searchSchools } from "./schools";
+import { kazakhCareers, kazakhCharacteristics } from "./careers-kk";
 
 function imagePath(filename) {
     return filename ? `/images/${filename}` : "";
@@ -33,6 +34,9 @@ function transformQuestions(serverQuestions) {
 }
 
 export default function TestPage() {
+    const language = useLanguage();
+    const copy = testText[language];
+    const answers = useRef([]);
     const [current, setCurrent] = useState(0);
     const [feedback, setFeedback] = useState(null);
     const [animKey, setAnimKey] = useState(0);
@@ -44,20 +48,21 @@ export default function TestPage() {
     const [finishStep, setFinishStep] = useState("name");
     const [userName, setUserName] = useState("");
     const [selectedSchool, setSelectedSchool] = useState("");
+    const [schoolSearch, setSchoolSearch] = useState("");
     const [otherSchool, setOtherSchool] = useState("");
-    const [saveError, setSaveError] = useState("");
+    const [saveError, setSaveError] = useState(false);
     const saving = useRef(false);
     const [results, setResults] = useState(null);
-    const schoolName = selectedSchool === "other" ? otherSchool.trim() : selectedSchool;
+    const selected = schools.find((school) => school.id === selectedSchool);
+    const schoolName = selectedSchool === "other" ? otherSchool.trim() : selected?.value ?? "";
+    const questionsForLanguage = useMemo(() => transformQuestions(translateQuestion(questions, language)), [questions, language]);
 
     // Загружаем вопросы из локального JSON при загрузке компонента
     useEffect(() => {
         async function loadQuestions() {
             setLoading(true);
             const rawData = await fetchQuestions();
-            const transformedQuestions = transformQuestions(rawData);
-            
-            setQuestions(transformedQuestions);
+            setQuestions(rawData);
             setLoading(false);
         }
         loadQuestions();
@@ -68,7 +73,7 @@ export default function TestPage() {
         (answer) => {
             if (transitioning) return;
 
-            data.push(answer);
+            answers.current.push(answer);
 
             setTransitioning(true);
             setFeedback("yes");
@@ -92,7 +97,7 @@ export default function TestPage() {
         (answer) => {
             if (transitioning) return;
 
-            data.push(answer);
+            answers.current.push(answer);
 
             setTransitioning(true);
             setFeedback("yes");
@@ -116,7 +121,7 @@ export default function TestPage() {
             <>
                 <main className="testPage">
                     <div className="progressBlock">
-                        <p>Загрузка вопросов...</p>
+                        <p>{copy.loading}</p>
                     </div>
                 </main>
             </>
@@ -129,7 +134,7 @@ export default function TestPage() {
             <>
                 <main className="testPage">
                     <div className="progressBlock">
-                        <p>Не удалось загрузить вопросы.</p>
+                        <p>{copy.loadError}</p>
                     </div>
                 </main>
             </>
@@ -142,19 +147,19 @@ export default function TestPage() {
 
         saving.current = true;
         setUserName(name);
-        setSaveError("");
+        setSaveError(false);
         setFinishStep("loading");
 
         try {
-            const saved = await sendAnswers(data, name, schoolName);
+            const saved = await sendAnswers(answers.current, name, schoolName);
 
             setResults(saved?.result || {});
-            data = [];
+            answers.current = [];
             setFinishStep("results");
         } catch (error) {
             console.error("Не удалось сохранить ответы:", error);
             setFinishStep("name");
-            setSaveError("Не удалось сохранить ответы. Проверьте соединение с интернетом и попробуйте ещё раз — ваши ответы сохранены в этой вкладке.");
+            setSaveError(true);
         } finally {
             saving.current = false;
         }
@@ -167,59 +172,45 @@ export default function TestPage() {
                 <>
                     <main className="testPage finish">
                         <div className="finishBox nameBox">
-                            <h1>Тест завершён</h1>
-                            <p>Укажите имя и школу, чтобы увидеть персональный результат.</p>
+                            <h1>{copy.finished}</h1>
+                            <p>{copy.enterDetails}</p>
                             <form className="participantForm" onSubmit={(event) => {
                                 event.preventDefault();
                                 startCalculation();
                             }}>
-                                <label htmlFor="participantName">Имя и фамилия</label>
+                                <label htmlFor="participantName">{copy.name}</label>
                                 <input
                                     id="participantName"
                                     name="name"
                                     className="participantInput"
                                     value={userName}
                                     onChange={(event) => setUserName(event.target.value)}
-                                    placeholder="Введите имя и фамилию"
+                                    placeholder={copy.namePlaceholder}
                                     autoComplete="name"
                                     required
                                     maxLength={120}
                                     pattern={".*\\S.*"}
                                 />
-                                <label htmlFor="participantSchool">Школа</label>
-                                <select
-                                    id="participantSchool"
-                                    name="school"
-                                    className="participantInput"
-                                    value={selectedSchool}
-                                    onChange={(event) => setSelectedSchool(event.target.value)}
-                                    required
-                                >
-                                    <option value="" disabled>Выберите школу Семея</option>
-                                    {semeySchools.map((school) => (
-                                        <option key={school} value={school}>{school}</option>
-                                    ))}
-                                    <option value="other">Другое</option>
-                                </select>
+                                <SchoolPicker {...{ language, copy, schoolSearch, setSchoolSearch, selectedSchool, setSelectedSchool, selected }} />
                                 {selectedSchool === "other" && (
                                     <>
-                                        <label htmlFor="otherSchool">Название школы</label>
+                                        <label htmlFor="otherSchool">{copy.otherSchool}</label>
                                         <input
                                             id="otherSchool"
                                             name="otherSchool"
                                             className="participantInput"
                                             value={otherSchool}
                                             onChange={(event) => setOtherSchool(event.target.value)}
-                                            placeholder="Введите название школы"
+                                            placeholder={copy.otherPlaceholder}
                                             required
                                             maxLength={200}
                                             pattern={".*\\S.*"}
                                         />
                                     </>
                                 )}
-                                {saveError && <p className="saveError" role="alert">{saveError}</p>}
+                                {saveError && <p className="saveError" role="alert">{copy.saveError}</p>}
                                 <button className="finishBtn" type="submit" disabled={!userName.trim() || !schoolName}>
-                                    Продолжить
+                                    {copy.continue}
                                 </button>
                             </form>
                         </div>
@@ -233,9 +224,9 @@ export default function TestPage() {
                 <>
                     <main className="testPage finish">
                         <div className="finishBox loadingBox">
-                            <h1>Рассчитываем результаты...</h1>
+                            <h1>{copy.saving}</h1>
                             <div className="loadingLine" />
-                            <p>Сохраняем ответы и готовим профиль.</p>
+                            <p>{copy.preparing}</p>
                         </div>
                     </main>
                 </>
@@ -246,12 +237,12 @@ export default function TestPage() {
             <>
                 <main className="testPage finish">
                     <div className="finishBox resultsBox">
-                        <h1>{userName || "Пользователь"}</h1>
+                        <h1>{userName || copy.participant}</h1>
                         <div className="resultList">
                             {characteristics.map((item) => (
                                 <div className="resultItem" key={item.key}>
                                     <div className="resultHeader">
-                                        <span>{item.label}</span>
+                                        <span>{characteristicLabel(item, language)}</span>
                                         <strong>{formatResult(resultValue(results, item.key))}/10</strong>
                                     </div>
                                     <div className="resultScale">
@@ -265,7 +256,7 @@ export default function TestPage() {
                                 </div>
                             ))}
                         </div>
-                        <div className="recommendation">{getRecommendation(results)}</div>
+                        <div className="recommendation">{getRecommendation(results, language)}</div>
                     </div>
                 </main>
             </>
@@ -291,7 +282,7 @@ export default function TestPage() {
                 </div>
 
                 <p>
-                    Вопрос {current + 1} / {questions.length}
+                    {copy.question} {current + 1} / {questions.length}
                 </p>
             </div>
 
@@ -299,15 +290,53 @@ export default function TestPage() {
                 key={animKey}
                 className="questionWrapper"
             >
-                {questions[current].render({
+                {questionsForLanguage[current].render({
                     next: isCurrentLast ? goFinish : goNext,
                     dragX,
                     setDragX,
                     dragStartX,
-                    finish: goFinish
+                    finish: goFinish,
+                    copy
                 })}
             </div>
         </main>
+    );
+}
+
+function SchoolPicker({ language, copy, schoolSearch, setSchoolSearch, selectedSchool, setSelectedSchool, selected }) {
+    const groups = searchSchools(schoolSearch);
+    const selectedHidden = selected && !groups.some((group) => group.schools.includes(selected));
+    return (
+        <>
+            <label htmlFor="schoolSearch">{copy.findSchool}</label>
+            <input
+                id="schoolSearch" type="search" className="participantInput"
+                value={schoolSearch} onChange={(event) => setSchoolSearch(event.target.value)}
+                placeholder={copy.searchPlaceholder} autoComplete="off"
+                onKeyDown={(event) => { if (event.key === "Enter") event.preventDefault(); }}
+            />
+            <label htmlFor="participantSchool">{copy.school}</label>
+            <select
+                id="participantSchool" name="school" className="participantInput" required
+                value={selectedSchool} onChange={(event) => setSelectedSchool(event.target.value)}
+                aria-describedby="schoolDetails"
+            >
+                <option value="" disabled>{copy.chooseSchool}</option>
+                {selectedHidden && <option value={selected.id}>{selected[language]}</option>}
+                {groups.filter((group) => group.schools.length > 0).map((group) => (
+                    <optgroup key={group.id} label={group[language]}>
+                        {group.schools.map((school) => (
+                            <option key={school.id} value={school.id}>{school[language]}</option>
+                        ))}
+                    </optgroup>
+                ))}
+                <option value="other">{copy.other}</option>
+            </select>
+            <p id="schoolDetails" className="schoolDetails" aria-live="polite">
+                {groups.every((group) => group.schools.length === 0) && <span>{copy.noSchools}</span>}
+                {selected && <span>{selected[language]}{selected.address[language] && ` — ${selected.address[language]}`}</span>}
+            </p>
+        </>
     );
 }
 
@@ -346,7 +375,7 @@ function cardsQuestion(title, cards) {
 ========================= */
 function swipeQuestion(title, image, text) {
     return {
-        render({ next, dragX, setDragX, dragStartX }) {
+        render({ next, dragX, setDragX, dragStartX, copy }) {
             function onDown(e) {
                 dragStartX.current = e.clientX;
                 e.currentTarget.setPointerCapture(e.pointerId);
@@ -397,13 +426,13 @@ function swipeQuestion(title, image, text) {
                         />
                         <h3>{text}</h3>
                         <div className="swipeHints">
-                            <span className="no">← Нет</span>
-                            <span className="yes">Да →</span>
+                            <span className="no">← {copy.no}</span>
+                            <span className="yes">{copy.yes} →</span>
                         </div>
                     </div>
                     <div className="swipeActions">
-                        <button type="button" onClick={() => next(2)}>Нет</button>
-                        <button type="button" onClick={() => next(1)}>Да</button>
+                        <button type="button" onClick={() => next(2)}>{copy.no}</button>
+                        <button type="button" onClick={() => next(1)}>{copy.yes}</button>
                     </div>
                 </div>
             );
@@ -446,21 +475,13 @@ function compareQuestion(title, left, right) {
    RATE TYPE
 ========================= */
 function rateQuestion(title, isLast) {
-    const variants = [
-        "Очень интересно",
-        "Интересно",
-        "Нейтрально",
-        "Не интересно",
-        "Совсем не интересно"
-    ];
-
     return {
-        render({ next, finish }) {
+        render({ next, finish, copy }) {
             return (
                 <div className="questionContainer">
                     <h2>{title}</h2>
                     <div className="rateBlock">
-                        {variants.map((v, i) => (
+                        {copy.ratings.map((v, i) => (
                             <button
                                 key={i}
                                 className="rateBtn"
@@ -517,16 +538,29 @@ function resultValue(result, key) {
     return foundKey ? source[foundKey] : 0;
 }
 
-function hasCharacteristics(result) {
-    return result && characteristics.some((item) => result[item.key] !== undefined);
+function characteristicLabel(item, language) {
+    return language === "kk" ? kazakhCharacteristics[item.key] : item.label;
 }
 
-function careerRecommendation({ profession, direction, reason, tasks, environment, growth, advice, ranking }) {
+function careerRecommendation({ profession, direction, reason, tasks, environment, growth, advice, ranking, language }) {
     const qualities = (items) => items.map((item, index) => (
         <span key={item.key}>
-            {index > 0 ? ", " : ""}<strong>{item.label.toLowerCase()}</strong> ({item.value}/10)
+            {index > 0 ? ", " : ""}<strong>{characteristicLabel(item, language).toLowerCase()}</strong> ({item.value}/10)
         </span>
     ));
+
+    if (language === "kk") {
+        const [title, field, why, duties, workplace, tryIt, roles] = kazakhCareers[profession];
+        return (
+            <>
+                <p>Сізге «{field}» бағытындағы <strong>{title}</strong> мамандығы сай келуі мүмкін. {why}</p>
+                <p>Басым қасиеттеріңіз: {qualities(ranking.leading)}. Сізге көмектесетін басқа қасиеттер: {qualities(ranking.supporting)}. Дамытуға болатын қасиеттер: {qualities(ranking.growth)}. Оларды тәжірибе арқылы біртіндеп жетілдіре аласыз.</p>
+                <p>Негізгі міндеттері: {duties}. {workplace}</p>
+                <p>Өзіңізді осы бағытта сынап көру үшін {tryIt}. Кейін мына рөлдерде жұмыс істей аласыз: {roles}.</p>
+                <p>Нәтиже қазіргі қасиеттеріңізді көрсетеді. Тәжірибе жинаған сайын қызығушылықтарыңыз бен сізге лайық бағыт өзгеруі мүмкін.</p>
+            </>
+        );
+    }
 
     return (
         <>
@@ -539,7 +573,7 @@ function careerRecommendation({ profession, direction, reason, tasks, environmen
     );
 }
 
-function getRecommendation(result) {
+function getRecommendation(result, language) {
     const ranked = [...characteristics]
         .sort((first, second) => resultValue(result, second.key) - resultValue(result, first.key));
     const top = ranked.slice(0, 3).map((item) => item.key);
@@ -641,7 +675,7 @@ function getRecommendation(result) {
     ];
 
     const selected = profiles.find(([match]) => match());
-    if (selected) return careerRecommendation({ ...selected[1], ranking });
+    if (selected) return careerRecommendation({ ...selected[1], ranking, language });
 
     return careerRecommendation({
         profession: "Графический дизайнер", direction: "визуальные коммуникации и создание идей",
@@ -650,6 +684,6 @@ function getRecommendation(result) {
         environment: "можно сочетать самостоятельность, интерес к людям и постоянное развитие вкуса",
         advice: "соберите небольшое портфолио из трёх работ и объясните идею каждой из них",
         growth: "графический дизайнер, арт-директор или специалист по визуальному брендингу",
-        ranking
+        ranking, language
     });
 }

@@ -141,6 +141,17 @@
         text-align: center;
     }
 
+    .languageSwitch svg {
+        width:15px;
+        height:15px;
+        margin:0 1px;
+    }
+
+    .languageSwitch button {
+        min-width:30px;
+        font-size:11px;
+    }
+
     .about {
         padding: 48px 16px;
     }
