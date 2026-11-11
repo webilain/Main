@@ -742,20 +742,6 @@ nav a,
     line-height:1.5;
 }
 
-.participantForm .schoolDetails{
-    font-size:14px;
-    color:#555;
-    line-height:1.4;
-}
-
-.participantForm .schoolDetails:empty{
-    display:none;
-}
-
-.schoolDetails span{
-    display:block;
-}
-
 .finishActions{
     display:flex;
     gap:12px;

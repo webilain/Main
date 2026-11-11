@@ -4,7 +4,6 @@ import { useState, useCallback, useEffect, useMemo, useRef } from "react";
 import { fetchQuestions, sendAnswers } from "./app";
 import { useLanguage } from "../language";
 import { testText, translateQuestion } from "./translations";
-import { schools, searchSchools } from "./schools";
 import { kazakhCareers, kazakhCharacteristics } from "./careers-kk";
 
 function imagePath(filename) {
@@ -47,14 +46,11 @@ export default function TestPage() {
     const [loading, setLoading] = useState(true);
     const [finishStep, setFinishStep] = useState("name");
     const [userName, setUserName] = useState("");
-    const [selectedSchool, setSelectedSchool] = useState("");
-    const [schoolSearch, setSchoolSearch] = useState("");
-    const [otherSchool, setOtherSchool] = useState("");
+    const [school, setSchool] = useState("");
     const [saveError, setSaveError] = useState(false);
     const saving = useRef(false);
     const [results, setResults] = useState(null);
-    const selected = schools.find((school) => school.id === selectedSchool);
-    const schoolName = selectedSchool === "other" ? otherSchool.trim() : selected?.value ?? "";
+    const schoolName = school.trim();
     const questionsForLanguage = useMemo(() => transformQuestions(translateQuestion(questions, language)), [questions, language]);
 
     // Загружаем вопросы из локального JSON при загрузке компонента
@@ -191,23 +187,18 @@ export default function TestPage() {
                                     maxLength={120}
                                     pattern={".*\\S.*"}
                                 />
-                                <SchoolPicker {...{ language, copy, schoolSearch, setSchoolSearch, selectedSchool, setSelectedSchool, selected }} />
-                                {selectedSchool === "other" && (
-                                    <>
-                                        <label htmlFor="otherSchool">{copy.otherSchool}</label>
-                                        <input
-                                            id="otherSchool"
-                                            name="otherSchool"
-                                            className="participantInput"
-                                            value={otherSchool}
-                                            onChange={(event) => setOtherSchool(event.target.value)}
-                                            placeholder={copy.otherPlaceholder}
-                                            required
-                                            maxLength={200}
-                                            pattern={".*\\S.*"}
-                                        />
-                                    </>
-                                )}
+                                <label htmlFor="participantSchool">{copy.school}</label>
+                                <input
+                                    id="participantSchool"
+                                    name="school"
+                                    className="participantInput"
+                                    value={school}
+                                    onChange={(event) => setSchool(event.target.value)}
+                                    placeholder={copy.schoolPlaceholder}
+                                    required
+                                    maxLength={200}
+                                    pattern={".*\\S.*"}
+                                />
                                 {saveError && <p className="saveError" role="alert">{copy.saveError}</p>}
                                 <button className="finishBtn" type="submit" disabled={!userName.trim() || !schoolName}>
                                     {copy.continue}
@@ -300,43 +291,6 @@ export default function TestPage() {
                 })}
             </div>
         </main>
-    );
-}
-
-function SchoolPicker({ language, copy, schoolSearch, setSchoolSearch, selectedSchool, setSelectedSchool, selected }) {
-    const groups = searchSchools(schoolSearch);
-    const selectedHidden = selected && !groups.some((group) => group.schools.includes(selected));
-    return (
-        <>
-            <label htmlFor="schoolSearch">{copy.findSchool}</label>
-            <input
-                id="schoolSearch" type="search" className="participantInput"
-                value={schoolSearch} onChange={(event) => setSchoolSearch(event.target.value)}
-                placeholder={copy.searchPlaceholder} autoComplete="off"
-                onKeyDown={(event) => { if (event.key === "Enter") event.preventDefault(); }}
-            />
-            <label htmlFor="participantSchool">{copy.school}</label>
-            <select
-                id="participantSchool" name="school" className="participantInput" required
-                value={selectedSchool} onChange={(event) => setSelectedSchool(event.target.value)}
-                aria-describedby="schoolDetails"
-            >
-                <option value="" disabled>{copy.chooseSchool}</option>
-                {selectedHidden && <option value={selected.id}>{selected[language]}</option>}
-                {groups.filter((group) => group.schools.length > 0).map((group) => (
-                    <optgroup key={group.id} label={group[language]}>
-                        {group.schools.map((school) => (
-                            <option key={school.id} value={school.id}>{school[language]}</option>
-                        ))}
-                    </optgroup>
-                ))}
-                <option value="other">{copy.other}</option>
-            </select>
-            <p id="schoolDetails" className="schoolDetails" aria-live="polite">
-                {groups.every((group) => group.schools.length === 0) && <span>{copy.noSchools}</span>}
-                {selected && <span>{selected[language]}{selected.address[language] && ` — ${selected.address[language]}`}</span>}
-            </p>
-        </>
     );
 }
 

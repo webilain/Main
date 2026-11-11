@@ -74,7 +74,7 @@ export async function POST(request) {
     }
 
     if (typeof payload.school !== "string" || !payload.school.trim() || payload.school.trim().length > 200) {
-        return NextResponse.json({ error: "Выберите школу или введите её название (до 200 символов)." }, { status: 400 });
+        return NextResponse.json({ error: "Введите название или номер школы (до 200 символов)." }, { status: 400 });
     }
 
     const timestamp = payload.timestamp ? new Date(payload.timestamp) : new Date();
